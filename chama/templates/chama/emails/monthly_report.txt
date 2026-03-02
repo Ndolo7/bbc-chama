@@ -1,0 +1,20 @@
+BBC Chama – Monthly Report: {{ month_name }}
+============================================
+
+Contribution summary for {{ month_name }}
+
+Collected : KES {{ total_collected|floatformat:0 }}
+Expected  : KES {{ total_expected|floatformat:0 }}
+Deficit   : KES {{ deficit|floatformat:0 }}
+
+Member Breakdown
+----------------
+{% for d in member_data %}{{ d.member.name|ljust:12 }} | {% if d.paid %}PAID – KES {{ d.amount|floatformat:0 }}{% else %}PENDING{% endif %}{% if d.shortfall > 0 %} (shortfall: KES {{ d.shortfall|floatformat:0 }}){% endif %}
+{% endfor %}
+
+{% if deficit > 0 %}KES {{ deficit|floatformat:0 }} is still outstanding. Please send your contribution ASAP.
+{% else %}All members have contributed. Well done!
+{% endif %}
+
+---
+BBC Chama | {{ today|date:"d M Y" }} | Target: KES {{ target|floatformat:0 }}/member

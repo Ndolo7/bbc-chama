@@ -1,0 +1,191 @@
+{% extends "chama/base.html" %}
+
+{% block title %}Add Contribution{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10">
+        <h4 class="fw-bold mb-1">Add Contribution</h4>
+        <p class="text-muted mb-4">Paste the M-Pesa or Cytonn SMS below. The form will be filled automatically.</p>
+
+        <!-- Step 1: SMS paste + parse -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-semibold"><span class="badge bg-primary rounded-pill me-2">1</span>Paste SMS</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">SMS Message</label>
+                    <textarea id="sms-input" class="form-control font-monospace" rows="5"
+                        placeholder="Paste the M-Pesa or Cytonn confirmation SMS here...
+
+M-Pesa example:
+QGH3K2P1R5 Confirmed. Ksh5,000.00 sent to CYTONN MONEY MARKET FUND on 31/8/25 at 10:30 AM.
+
+Cytonn example:
+Your deposit of KES 5,000.00 in Cytonn Money Market Fund was successful. Transaction ID: CYT123456. Date: 31-Aug-2025"></textarea>
+                </div>
+                <button type="button" id="parse-btn" class="btn btn-secondary">
+                    <i class="bi bi-magic me-2"></i>Parse SMS
+                </button>
+
+                <div id="parse-result" class="mt-3 p-3 d-none">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Confirm & save -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-semibold"><span class="badge bg-primary rounded-pill me-2">2</span>Confirm &amp; Save</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="contribution-form">
+                    {% csrf_token %}
+
+                    {# Hidden fields populated by the parser – sms_text enforces SMS was provided #}
+                    {{ form.sms_text }}
+                    {{ form.sms_source }}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Member *</label>
+                            {{ form.member }}
+                            {% if form.member.errors %}
+                            <div class="text-danger small">{{ form.member.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">
+                                M-Pesa Code
+                                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:0.65rem;">from SMS</span>
+                            </label>
+                            {{ form.mpesa_code }}
+                            {% if form.mpesa_code.errors %}
+                            <div class="text-danger small">{{ form.mpesa_code.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">
+                                Amount (KES)
+                                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:0.65rem;">from SMS</span>
+                            </label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}
+                            <div class="text-danger small">{{ form.amount.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">
+                                Transaction Date
+                                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:0.65rem;">from SMS</span>
+                            </label>
+                            {{ form.transaction_date }}
+                            {% if form.transaction_date.errors %}
+                            <div class="text-danger small">{{ form.transaction_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">
+                                Contribution Month
+                                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:0.65rem;">from SMS</span>
+                            </label>
+                            {{ form.contribution_month }}
+                            {% if form.contribution_month.errors %}
+                            <div class="text-danger small">{{ form.contribution_month.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium">Notes <small class="text-muted">(optional)</small></label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+
+                    {% if form.sms_text.errors %}
+                    <div class="alert alert-danger mt-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ form.sms_text.errors.0 }}
+                    </div>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="mt-4 d-flex gap-2 align-items-center">
+                        <button type="submit" id="save-btn" class="btn btn-primary px-4" disabled>
+                            <i class="bi bi-save me-2"></i>Save Contribution
+                        </button>
+                        <a href="{% url 'chama:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <small id="save-hint" class="text-muted ms-2">Parse an SMS first to enable saving.</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PARSE_URL = "{% url 'chama:parse_sms' %}";
+const CSRF = "{{ csrf_token }}";
+
+document.getElementById('parse-btn').addEventListener('click', async () => {
+    const sms = document.getElementById('sms-input').value.trim();
+    const resultEl = document.getElementById('parse-result');
+    if (!sms) {
+        resultEl.innerHTML = '<div class="alert alert-warning mb-0">Please paste an SMS first.</div>';
+        resultEl.classList.remove('d-none');
+        return;
+    }
+
+    const btn = document.getElementById('parse-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Parsing…';
+
+    try {
+        const resp = await fetch(PARSE_URL, {
+            method: 'POST',
+            headers: {'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `sms_text=${encodeURIComponent(sms)}`,
+        });
+        const data = await resp.json();
+
+        if (data.ok) {
+            // Populate readonly fields from parsed data
+            document.querySelector('[name="mpesa_code"]').value = data.code;
+            document.querySelector('[name="amount"]').value = data.amount;
+            document.querySelector('[name="transaction_date"]').value = data.transaction_date.slice(0, 16);
+            document.querySelector('[name="contribution_month"]').value = data.contribution_month.slice(0, 7);
+
+            // Populate hidden fields
+            document.querySelector('[name="sms_source"]').value = data.source;
+            document.querySelector('[name="sms_text"]').value = sms;
+
+            // Unlock the save button
+            document.getElementById('save-btn').disabled = false;
+            document.getElementById('save-hint').textContent = 'Select a member, then save.';
+
+            resultEl.innerHTML = `
+                <div class="alert alert-success mb-0">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Parsed successfully!</strong>
+                    Code: <code>${data.code}</code> &nbsp;
+                    Amount: <strong>KES ${parseFloat(data.amount).toLocaleString()}</strong> &nbsp;
+                    Date: <strong>${data.transaction_date.slice(0, 10)}</strong> &nbsp;
+                    Source: <strong>${data.source.toUpperCase()}</strong>
+                    <br><small class="mt-1 d-block text-muted">Now select the member above and click Save.</small>
+                </div>`;
+        } else {
+            resultEl.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>${data.error}</div>`;
+        }
+    } catch(e) {
+        resultEl.innerHTML = `<div class="alert alert-danger mb-0">Network error. Please try again.</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-magic me-2"></i>Parse SMS';
+        resultEl.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BBC Chama{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'chama/css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-primary px-3" style="background-color:#1a2744 !important;">
+    <a class="navbar-brand" href="{% url 'chama:dashboard' %}">
+        <i class="bi bi-piggy-bank-fill me-2"></i>BBC Chama
+    </a>
+    <div class="d-flex align-items-center gap-3">
+        <small class="text-white-50">Cytonn MMF</small>
+        {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+        </a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        {% if user.is_authenticated %}
+        <nav class="col-md-2 col-lg-2 d-none d-md-block sidebar py-3">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                       href="{% url 'chama:dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'contribution' in request.resolver_match.url_name %}active{% endif %}"
+                       href="{% url 'chama:contributions' %}">
+                        <i class="bi bi-list-check"></i> Contributions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'add_contribution' %}active{% endif %}"
+                       href="{% url 'chama:add_contribution' %}">
+                        <i class="bi bi-plus-circle"></i> Add Contribution
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"
+                       href="{% url 'chama:reports' %}">
+                        <i class="bi bi-bar-chart-line"></i> Reports
+                    </a>
+                </li>
+                <hr class="border-secondary mx-3">
+                <li class="nav-item px-3 pb-1">
+                    <small class="text-white-50 text-uppercase" style="font-size:0.7rem; letter-spacing:1px;">Members</small>
+                </li>
+                {% for member in sidebar_members %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'chama:member_detail' member.pk %}">
+                        <i class="bi bi-person"></i> {{ member.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Main content -->
+        <main class="{% if user.is_authenticated %}col-md-10 col-lg-10{% else %}col-12{% endif %} py-4 px-4">
+            {% if messages %}
+            {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

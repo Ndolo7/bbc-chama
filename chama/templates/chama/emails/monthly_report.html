@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+  .card { background: #fff; border-radius: 8px; max-width: 600px; margin: 0 auto; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .header { background: #1a2744; color: #fff; padding: 24px 28px; }
+  .header h1 { margin: 0; font-size: 22px; }
+  .header p { margin: 4px 0 0; opacity: 0.75; font-size: 13px; }
+  .body { padding: 28px; }
+  .summary-grid { display: flex; gap: 12px; margin: 20px 0; }
+  .summary-box { flex: 1; background: #f8fafc; border-radius: 6px; padding: 14px 16px; text-align: center; }
+  .summary-box .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-box .value { font-size: 22px; font-weight: 700; color: #1a2744; margin-top: 4px; }
+  .summary-box.success .value { color: #059669; }
+  .summary-box.danger .value { color: #dc2626; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  th { background: #f1f5f9; text-align: left; padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #64748b; }
+  td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+  .paid { color: #059669; font-weight: 600; }
+  .unpaid { color: #dc2626; }
+  .footer { padding: 16px 28px; background: #f8fafc; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>&#128026; BBC Chama – Monthly Report</h1>
+    <p>{{ month_name }}</p>
+  </div>
+  <div class="body">
+    <p>Here is the contribution summary for <strong>{{ month_name }}</strong>.</p>
+
+    <div class="summary-grid">
+      <div class="summary-box success">
+        <div class="label">Collected</div>
+        <div class="value">KES {{ total_collected|floatformat:0 }}</div>
+      </div>
+      <div class="summary-box">
+        <div class="label">Expected</div>
+        <div class="value">KES {{ total_expected|floatformat:0 }}</div>
+      </div>
+      <div class="summary-box {% if deficit > 0 %}danger{% endif %}">
+        <div class="label">Deficit</div>
+        <div class="value">KES {{ deficit|floatformat:0 }}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Shortfall</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in member_data %}
+        <tr>
+          <td><strong>{{ d.member.name }}</strong></td>
+          <td>{% if d.paid %}<span class="paid">&#10003; Paid</span>{% else %}<span class="unpaid">&#10007; Pending</span>{% endif %}</td>
+          <td>{% if d.paid %}KES {{ d.amount|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td>{% if d.shortfall > 0 %}<span class="unpaid">KES {{ d.shortfall|floatformat:0 }}</span>{% else %}<span class="paid">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if deficit > 0 %}
+    <p style="background:#fef2f2;padding:12px 16px;border-radius:6px;color:#991b1b;font-size:13px;">
+      &#9888; KES {{ deficit|floatformat:0 }} is still outstanding for {{ month_name }}.
+      Members with pending contributions are urged to send their amount as soon as possible.
+    </p>
+    {% else %}
+    <p style="background:#f0fdf4;padding:12px 16px;border-radius:6px;color:#14532d;font-size:13px;">
+      &#10003; All members have contributed for {{ month_name }}. Great work, team!
+    </p>
+    {% endif %}
+  </div>
+  <div class="footer">
+    BBC Chama &mdash; monthly report &middot; {{ today|date:"d M Y" }}<br>
+    Target per member: KES {{ target|floatformat:0 }}
+  </div>
+</div>
+</body>
+</html>

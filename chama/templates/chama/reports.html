@@ -1,0 +1,187 @@
+{% extends "chama/base.html" %}
+
+{% block title %}Reports – {{ year }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Annual Report</h4>
+        <p class="text-muted small mb-0">{{ year }} contribution summary</p>
+    </div>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+            {% for y in available_years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<!-- Annual KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100 border-success border-2">
+            <div class="stat-label text-muted">Total Collected ({{ year }})</div>
+            <div class="stat-value text-success">KES {{ grand_total|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Expected ({{ year }})</div>
+            <div class="stat-value">KES {{ grand_expected|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100 border-danger border-2">
+            <div class="stat-label text-muted">Total Deficit ({{ year }})</div>
+            <div class="stat-value text-danger">KES {{ grand_deficit|floatformat:0 }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bar chart: monthly collected vs expected -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Monthly Collections vs Expected</h6>
+    </div>
+    <div class="card-body">
+        <div class="chart-container" style="height:260px;">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Per-member annual summary -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Member Summary – {{ year }}</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Member</th>
+                    <th>Months Paid</th>
+                    <th>Total Contributed</th>
+                    <th>Expected</th>
+                    <th>Deficit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ms in member_summaries %}
+                <tr>
+                    <td>
+                        <a href="{% url 'chama:member_detail' ms.member.pk %}" class="text-decoration-none fw-medium">
+                            {{ ms.member.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge {% if ms.months_paid == year_months|length %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill">
+                            {{ ms.months_paid }} / {{ year_months|length }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold text-success">KES {{ ms.total|floatformat:0 }}</td>
+                    <td>KES {{ ms.expected|floatformat:0 }}</td>
+                    <td>
+                        {% if ms.deficit > 0 %}
+                        <span class="text-danger fw-medium">KES {{ ms.deficit|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Fully paid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Month-by-month breakdown table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Month-by-Month Breakdown</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Month</th>
+                    {% for m in members %}<th>{{ m.name }}</th>{% endfor %}
+                    <th>Total</th>
+                    <th>Expected</th>
+                    <th>Deficit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mt in monthly_totals %}
+                <tr>
+                    <td class="fw-medium">{{ mt.month_name }}</td>
+                    {% for mc in mt.contributions %}
+                    <td>
+                        {% if mc.paid %}
+                        <span class="text-success fw-medium small">KES {{ mc.amount|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="text-danger small"><i class="bi bi-x-circle"></i></span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="fw-semibold">KES {{ mt.total|floatformat:0 }}</td>
+                    <td class="text-muted">KES {{ mt.expected|floatformat:0 }}</td>
+                    <td>
+                        {% if mt.deficit > 0 %}
+                        <span class="text-danger small">KES {{ mt.deficit|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="text-success small"><i class="bi bi-check-circle-fill"></i></span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [
+            {
+                label: 'Collected',
+                data: {{ chart_actual|safe }},
+                backgroundColor: '#3b82f6',
+                borderRadius: 4,
+            },
+            {
+                label: 'Expected',
+                data: {{ chart_expected|safe }},
+                backgroundColor: '#e2e8f0',
+                borderRadius: 4,
+            }
+        ]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => `KES ${v.toLocaleString()}`
+                }
+            }
+        },
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.dataset.label}: KES ${ctx.raw.toLocaleString()}`
+                }
+            }
+        },
+        maintainAspectRatio: false,
+    }
+});
+</script>
+{% endblock %}
