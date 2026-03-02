@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   web:
     build: .
@@ -5,10 +7,10 @@ services:
     restart: always
     volumes:
       - static_volume:/app/staticfiles
+    ports:
+      - "8001:8000"
     env_file:
       - .env
-    ports:
-      - "8001:8000"  # Expose this so Nginx Proxy Manager can find it
     depends_on:
       - db
       - redis
@@ -26,8 +28,8 @@ services:
     restart: always
 
   worker:
-    build: .
-    command: celery -A bbc_chama worker -l info --concurrency 2
+    image: ghcr.io/ndolo7/bbc-chama:latest
+    command: celery -A bbc_chama worker -l info
     restart: on-failure
     env_file:
       - .env
@@ -37,8 +39,8 @@ services:
       - db
 
   beat:
-    build: .
-    command: celery -A bbc_chama beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    image: ghcr.io/ndolo7/bbc-chama:latest
+    command: celery -A bbc_chama beat -l info
     restart: on-failure
     env_file:
       - .env
