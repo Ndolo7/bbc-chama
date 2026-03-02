@@ -101,7 +101,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.prod.yml,nginx/"
-          target: "/home/${{ secrets.USERNAME }}/bbc-chama"
+          target: "/home/${{ secrets.VPS_USER }}/bbc-chama"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
@@ -122,10 +122,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,DJANGO_ENV
+          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,DJANGO_ENV,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
           script: |
             set -e
-            cd /home/${{ secrets.USERNAME }}/bbc-chama
+            cd /home/${{ secrets.VPS_USER }}/bbc-chama
 
             echo "SECRET_KEY=$SECRET_KEY" > .env
             echo "DJANGO_ENV=$DJANGO_ENV" >> .env
