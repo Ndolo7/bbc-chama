@@ -1,0 +1,8 @@
+Django>=5.1,<6.0
+celery>=5.4,<6.0
+redis>=5.0,<6.0
+django-celery-beat>=2.7,<3.0
+python-decouple>=3.8,<4.0
+django-anymail[brevo]>=10.0
+gunicorn>=22.0,<24.0
+psycopg2-binary>=2.9,<3.0
