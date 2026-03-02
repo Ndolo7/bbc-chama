@@ -1,0 +1,52 @@
+services:
+  web:
+    build: .
+    command: gunicorn bbc_chama.wsgi:application --bind 0.0.0.0:8000
+    restart: always
+    volumes:
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"  # Expose this so Nginx Proxy Manager can find it
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+  worker:
+    build: .
+    command: celery -A bbc_chama worker -l info --concurrency 2
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on:
+      - web
+      - redis
+      - db
+
+  beat:
+    build: .
+    command: celery -A bbc_chama beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on:
+      - web
+      - redis
+      - db
+
+volumes:
+  postgres_data:
+  static_volume:
