@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+  .card { background: #fff; border-radius: 8px; max-width: 520px; margin: 0 auto; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .header { background: #1a2744; color: #fff; padding: 24px 28px; }
+  .header h1 { margin: 0; font-size: 22px; }
+  .header p { margin: 4px 0 0; opacity: 0.75; font-size: 13px; }
+  .body { padding: 28px; }
+  .amount-box { background: #fff7ed; border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+  .amount-box .label { font-size: 12px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .amount-box .value { font-size: 28px; font-weight: 700; color: #92400e; }
+  .btn { display: inline-block; background: #1a2744; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 8px 0; }
+  .footer { padding: 16px 28px; background: #f8fafc; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>&#128026; BBC Chama</h1>
+    <p>Cytonn Money Market Fund</p>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ member.name }}</strong>,</p>
+
+    {% if is_end_of_month %}
+    <p>This is a friendly reminder that the month of <strong>{{ month_name }}</strong> ends in
+    <strong>{{ days_left }} day{{ days_left|pluralize }}</strong>.</p>
+    <p>Your Cytonn MMF contribution for this month has <strong>not been received yet</strong>.</p>
+    {% else %}
+    <p>Your Cytonn MMF contribution for <strong>{{ month_name }}</strong> has not been received yet.</p>
+    {% endif %}
+
+    <div class="amount-box">
+      <div class="label">Amount Due</div>
+      <div class="value">KES {{ target|floatformat:0 }}</div>
+    </div>
+
+    <p>Please send <strong>KES {{ target|floatformat:0 }}</strong> via M-Pesa to the Cytonn Money Market Fund
+    and share the confirmation SMS in the group chat.</p>
+
+    <p style="color:#64748b; font-size:13px;">
+      Once shared, the admin will record it on the BBC Chama tracker.
+    </p>
+  </div>
+  <div class="footer">
+    BBC Chama &mdash; automated reminder &middot; {{ today|date:"d M Y" }}
+    <br>You are receiving this because your contribution for {{ month_name }} is outstanding.
+  </div>
+</div>
+</body>
+</html>

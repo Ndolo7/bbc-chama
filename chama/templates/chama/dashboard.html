@@ -1,0 +1,205 @@
+{% extends "chama/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard – {{ month_name }}{% endblock %}
+
+{% block content %}
+<!-- Month navigation header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0 fw-bold">Dashboard</h4>
+        <p class="text-muted mb-0 small">Contributions for {{ month_name }}</p>
+    </div>
+    <div class="month-nav">
+        {% if has_prev %}
+        <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
+        {% endif %}
+
+        <span class="fw-semibold">{{ month_name }}</span>
+
+        {% if has_next %}
+        <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+        {% endif %}
+
+        <a href="{% url 'chama:add_contribution' %}" class="btn btn-sm btn-primary ms-2">
+            <i class="bi bi-plus-lg me-1"></i>Add
+        </a>
+    </div>
+</div>
+
+<!-- Summary stat cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Collected</div>
+            <div class="stat-value text-success">KES {{ total_collected|floatformat:0 }}</div>
+            <small class="text-muted">of KES {{ total_expected|floatformat:0 }}</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Paid</div>
+            <div class="stat-value text-primary">{{ member_status|length|add:"0" }}</div>
+            {% with paid_count=member_status|length %}
+            <small class="text-muted">
+                {% for s in member_status %}{% if s.paid %}✓{% endif %}{% endfor %}
+                / {{ member_status|length }} members
+            </small>
+            {% endwith %}
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Target / member</div>
+            <div class="stat-value">KES {{ target|floatformat:0 }}</div>
+            <small class="text-muted">per month</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Deficit</div>
+            {% with deficit=total_expected|add:0 %}
+            <div class="stat-value text-danger">
+                KES {{ total_expected|floatformat:0 }}
+            </div>
+            {% endwith %}
+            <small class="text-muted">expected total</small>
+        </div>
+    </div>
+</div>
+
+<!-- Member cards + chart row -->
+<div class="row g-3 mb-4">
+    <!-- Member status cards -->
+    <div class="col-md-7">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Member Status</h6>
+        <div class="row g-2">
+            {% for s in member_status %}
+            <div class="col-sm-6">
+                <div class="member-card p-3 {% if s.paid %}paid{% else %}unpaid{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <a href="{% url 'chama:member_detail' s.member.pk %}" class="text-decoration-none text-dark fw-semibold">
+                                {{ s.member.name }}
+                            </a>
+                            {% if s.paid %}
+                            <div class="mt-1">
+                                <span class="badge badge-paid rounded-pill">
+                                    <i class="bi bi-check-circle-fill me-1"></i>KES {{ s.amount|floatformat:0 }}
+                                </span>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                {{ s.contribution.transaction_date|date:"d M Y" }}
+                                &mdash; {{ s.contribution.mpesa_code }}
+                            </small>
+                            {% else %}
+                            <div class="mt-1">
+                                <span class="badge badge-unpaid rounded-pill">
+                                    <i class="bi bi-x-circle-fill me-1"></i>Pending
+                                </span>
+                            </div>
+                            <small class="text-muted d-block mt-1">Shortfall: KES {{ s.shortfall|floatformat:0 }}</small>
+                            {% endif %}
+                        </div>
+                        {% if s.paid %}
+                        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                        {% else %}
+                        <i class="bi bi-clock text-danger fs-5"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pie chart -->
+    <div class="col-md-5">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">All-Time Share Distribution</h6>
+        <div class="card p-3 border-0 shadow-sm">
+            <div class="chart-container">
+                <canvas id="shareChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent contributions table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-semibold">Recent Contributions</h6>
+        <a href="{% url 'chama:contributions' %}" class="btn btn-sm btn-outline-primary">View all</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Member</th>
+                        <th>Month</th>
+                        <th>Amount</th>
+                        <th>Code</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in recent %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'chama:member_detail' c.member.pk %}" class="text-decoration-none fw-medium">
+                                {{ c.member.name }}
+                            </a>
+                        </td>
+                        <td>{{ c.contribution_month|date:"M Y" }}</td>
+                        <td class="fw-semibold">KES {{ c.amount|floatformat:0 }}</td>
+                        <td><code>{{ c.mpesa_code }}</code></td>
+                        <td class="text-muted small">{{ c.transaction_date|date:"d M Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No contributions yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const labels = {{ chart_labels|safe }};
+const data = {{ chart_data|safe }};
+const colours = ['#3b82f6','#10b981','#f59e0b','#ef4444'];
+
+new Chart(document.getElementById('shareChart'), {
+    type: 'doughnut',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: data,
+            backgroundColor: colours,
+            borderWidth: 2,
+        }]
+    },
+    options: {
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` KES ${ctx.raw.toLocaleString()}`
+                }
+            }
+        },
+        maintainAspectRatio: false,
+    }
+});
+</script>
+{% endblock %}

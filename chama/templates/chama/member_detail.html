@@ -1,0 +1,97 @@
+{% extends "chama/base.html" %}
+
+{% block title %}{{ member.name }} – BBC Chama{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold"
+         style="width:52px;height:52px;font-size:1.4rem;">
+        {{ member.name|first }}
+    </div>
+    <div>
+        <h4 class="fw-bold mb-0">{{ member.name }}</h4>
+        <p class="text-muted mb-0 small">{{ member.email }} &middot; Member since {{ member.joined_month|date:"M Y" }}</p>
+    </div>
+</div>
+
+<!-- Summary row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Total Contributed</div>
+            <div class="stat-value text-success">KES {{ total_contributed|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Total Expected</div>
+            <div class="stat-value">KES {{ total_expected|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Months Paid</div>
+            <div class="stat-value text-primary">{{ months_paid }}</div>
+            <small class="text-muted">of {{ all_months|length }}</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Deficit</div>
+            <div class="stat-value {% if deficit > 0 %}text-danger{% else %}text-success{% endif %}">
+                KES {{ deficit|floatformat:0 }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Month-by-month table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between">
+        <h6 class="mb-0 fw-semibold">Contribution History</h6>
+        <a href="{% url 'chama:add_contribution' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Month</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Code</th>
+                    <th>Date Paid</th>
+                    <th>Shortfall</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ym, info in contribs_by_month.items %}
+                <tr>
+                    <td class="fw-medium">{{ info.month_name }}</td>
+                    <td>
+                        {% if info.paid %}
+                        <span class="badge badge-paid rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Paid</span>
+                        {% else %}
+                        <span class="badge badge-unpaid rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if info.paid %}KES {{ info.amount|floatformat:0 }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td>{% if info.contribution %}<code>{{ info.contribution.mpesa_code }}</code>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td class="small text-muted">
+                        {% if info.contribution %}{{ info.contribution.transaction_date|date:"d M Y" }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if info.shortfall > 0 %}
+                        <span class="text-danger small fw-medium">KES {{ info.shortfall|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="text-success small">✓</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

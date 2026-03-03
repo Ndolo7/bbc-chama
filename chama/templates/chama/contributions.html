@@ -1,0 +1,111 @@
+{% extends "chama/base.html" %}
+
+{% block title %}Contributions{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">All Contributions</h4>
+        <p class="text-muted small mb-0">{{ contributions|length }} record(s)</p>
+    </div>
+    <a href="{% url 'chama:add_contribution' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Add
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label mb-1 small">Member</label>
+                <select name="member" class="form-select form-select-sm">
+                    <option value="">All members</option>
+                    {% for m in members %}
+                    <option value="{{ m.pk }}" {% if member_filter == m.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ m.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label mb-1 small">Month</label>
+                <select name="month" class="form-select form-select-sm">
+                    <option value="">All months</option>
+                    {% for y, m in all_months %}
+                    {% with month_str=y|stringformat:"04d"|add:"-"|add:m|stringformat:"02d" %}
+                    <option value="{{ month_str }}" {% if month_filter == month_str %}selected{% endif %}>
+                        {{ y }}-{{ m|stringformat:"02d" }}
+                    </option>
+                    {% endwith %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+                <a href="{% url 'chama:contributions' %}" class="btn btn-outline-secondary btn-sm ms-1">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Member</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Code</th>
+                    <th>Transaction Date</th>
+                    <th>Source</th>
+                    <th>Added</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contributions %}
+                <tr>
+                    <td>
+                        <a href="{% url 'chama:member_detail' c.member.pk %}" class="text-decoration-none fw-medium">
+                            {{ c.member.name }}
+                        </a>
+                    </td>
+                    <td>{{ c.contribution_month|date:"M Y" }}</td>
+                    <td class="fw-semibold">KES {{ c.amount|floatformat:0 }}</td>
+                    <td><code>{{ c.mpesa_code }}</code></td>
+                    <td class="small text-muted">{{ c.transaction_date|date:"d M Y H:i" }}</td>
+                    <td>
+                        {% if c.sms_source == 'mpesa' %}
+                        <span class="badge bg-success-subtle text-success">M-Pesa</span>
+                        {% elif c.sms_source == 'cytonn' %}
+                        <span class="badge bg-primary-subtle text-primary">Cytonn</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary">Manual</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ c.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'chama:delete_contribution' c.pk %}"
+                              onsubmit="return confirm('Delete this contribution?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        No contributions found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

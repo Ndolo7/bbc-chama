@@ -1,0 +1,153 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # Image lives at ghcr.io/<owner>/bbc-chama
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bbc-chama
+  DJANGO_ENV: prod
+  DATABASE_URL: sqlite:///db.sqlite3
+
+
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Django System Check
+      run: |
+        python manage.py check
+
+  build:
+    name: Build & push image
+    needs: test-and-lint
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write        # needed to push to ghcr.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Lowercase Repo Owner
+        run: |
+          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          # Layer cache — speeds up subsequent builds significantly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 2. SSH into VPS and redeploy ──────────────────────────────────────────
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code (for docker-compose.prod.yml + nginx/)
+        uses: actions/checkout@v4
+
+      - name: Copy compose files to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "docker-compose.prod.yml,nginx/"
+          target: "/home/${{ secrets.VPS_USER }}/bbc-chama"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
+          CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DJANGO_ENV: ${{ secrets.DJANGO_ENV }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,DATABASE_URL,DJANGO_ENV,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
+          script: |
+            set -e
+            cd /home/${{ secrets.VPS_USER }}/bbc-chama
+
+            echo "SECRET_KEY=$SECRET_KEY" > .env
+            echo "DJANGO_ENV=$DJANGO_ENV" >> .env
+            echo "DEBUG=False" >> .env
+            echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
+            echo "CSRF_TRUSTED_ORIGINS=$CSRF_TRUSTED_ORIGINS" >> .env
+            echo "DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" >> .env
+            echo "BREVO_API_KEY=$BREVO_API_KEY" >> .env
+            echo "DEFAULT_FROM_EMAIL=$DEFAULT_FROM_EMAIL" >> .env
+            echo "CELERY_BROKER_URL=$CELERY_BROKER_URL" >> .env
+            echo "ADMIN_EMAIL=$ADMIN_EMAIL" >> .env
+
+            # Authenticate with GHCR using a read-only PAT
+            echo "${{ secrets.GHCR_TOKEN }}" | \
+              docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # Pull the new image and recreate changed containers
+            DOCKER_IMAGE=${{ env.IMAGE }} \
+              docker compose -f docker-compose.prod.yml pull
+
+            DOCKER_IMAGE=${{ env.IMAGE }} \
+              docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            sleep 5
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput  
+
+            echo "Deploy complete — $(date)"
