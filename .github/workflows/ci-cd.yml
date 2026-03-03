@@ -108,8 +108,10 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
           CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DJANGO_ENV: ${{ secrets.DJANGO_ENV }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
@@ -118,7 +120,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,DATABASE_URL,DJANGO_ENV,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
+          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,DJANGO_ENV,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
           script: |
             set -e
             cd /home/${{ secrets.VPS_USER }}/bbc-chama
@@ -139,11 +141,9 @@ jobs:
               docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Pull the new image and recreate changed containers
-            DOCKER_IMAGE=${{ env.IMAGE }} \
-              docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
 
-            DOCKER_IMAGE=${{ env.IMAGE }} \
-              docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             sleep 5
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
