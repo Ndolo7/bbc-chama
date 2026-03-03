@@ -6,7 +6,9 @@ import dj_database_url
 DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+CSRF_TRUSTED_ORIGINS = [
+    o for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o
+]
 
 # ── Database (PostgreSQL) ────────────────────────────────────────────────────
 DATABASES = {
