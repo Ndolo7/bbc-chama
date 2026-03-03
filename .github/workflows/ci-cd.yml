@@ -133,6 +133,7 @@ jobs:
             echo "DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" >> .env
             echo "POSTGRES_HOST=db" >> .env
             echo "POSTGRES_PORT=5432" >> .env
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
             echo "BREVO_API_KEY=$BREVO_API_KEY" >> .env
             echo "DEFAULT_FROM_EMAIL=$DEFAULT_FROM_EMAIL" >> .env
             echo "CELERY_BROKER_URL=$CELERY_BROKER_URL" >> .env
