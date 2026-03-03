@@ -145,7 +145,7 @@ jobs:
 
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            sleep 5
+            sleep 15
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
             docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput  
 
