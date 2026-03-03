@@ -43,7 +43,7 @@ jobs:
 
     - name: Django System Check
       run: |
-        python manage.py check
+        DJANGO_ENV=prod python manage.py check
 
   build:
     name: Build & push image
