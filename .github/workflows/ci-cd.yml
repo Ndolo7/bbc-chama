@@ -8,7 +8,6 @@ on:
 
 env:
   # Image lives at ghcr.io/<owner>/bbc-chama
-  IMAGE: ghcr.io/${{ github.repository_owner }}/bbc-chama
   DJANGO_ENV: prod
   DATABASE_URL: sqlite:///db.sqlite3
 
@@ -72,18 +71,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Lowercase Repo Owner
-        run: |
-          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_OWNER }}/bbc-chama:latest
+            ghcr.io/${{ env.REPO_OWNER }}/bbc-chama:${{ github.sha }}
           # Layer cache — speeds up subsequent builds significantly
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -140,7 +135,7 @@ jobs:
             echo "ADMIN_EMAIL=$ADMIN_EMAIL" >> .env
 
             # Authenticate with GHCR using a read-only PAT
-            echo "${{ secrets.GHCR_TOKEN }}" | \
+            echo "${{ secrets.GHP_TOKEN }}" | \
               docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Pull the new image and recreate changed containers
