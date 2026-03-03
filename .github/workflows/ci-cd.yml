@@ -109,20 +109,17 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
           CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DJANGO_ENV: ${{ secrets.DJANGO_ENV }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,DJANGO_ENV,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
+          envs: SECRET_KEY,ALLOWED_HOSTS,CSRF_TRUSTED_ORIGINS,DATABASE_URL,DJANGO_ENV,BREVO_API_KEY,DEFAULT_FROM_EMAIL,CELERY_BROKER_URL,ADMIN_EMAIL
           script: |
             set -e
             cd /home/${{ secrets.VPS_USER }}/bbc-chama
@@ -130,11 +127,8 @@ jobs:
             echo "SECRET_KEY=$SECRET_KEY" > .env
             echo "DJANGO_ENV=$DJANGO_ENV" >> .env
             echo "DEBUG=False" >> .env
-            echo "POSTGRES_USER=$POSTGRES_USER" >> .env
-            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
-            echo "POSTGRES_DB=$POSTGRES_DB" >> .env
             echo "ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
-            echo "CSRF_TRUSTED_ORIGINS=$CSRF_TRUSTED_ORIGINS" >> .env          
+            echo "CSRF_TRUSTED_ORIGINS=$CSRF_TRUSTED_ORIGINS" >> .env
             echo "DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" >> .env
             echo "BREVO_API_KEY=$BREVO_API_KEY" >> .env
             echo "DEFAULT_FROM_EMAIL=$DEFAULT_FROM_EMAIL" >> .env
