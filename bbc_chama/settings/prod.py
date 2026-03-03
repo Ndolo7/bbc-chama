@@ -6,6 +6,7 @@ import dj_database_url
 DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='').split(',')
 
 # ── Database (PostgreSQL) ────────────────────────────────────────────────────
 DATABASES = {
@@ -19,6 +20,7 @@ EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
 # SSL is terminated at the Nginx/load-balancer level, so Django itself does
 # not need to redirect HTTP→HTTPS. Set SECURE_SSL_REDIRECT=True only if
 # Django is exposed directly to the internet without a reverse proxy.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
