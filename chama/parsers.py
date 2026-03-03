@@ -7,6 +7,9 @@ M-Pesa send confirmation:
   QGH3K2P1R5 Confirmed. Ksh5,000.00 sent to CYTONN MONEY MARKET FUND on 1/8/25 at 3:45 PM.
   QGH3K2P1R5 Confirmed.Ksh5,000.00 sent to CYTONN MONEY MARKET FUND on 1/8/2025 at 3:45 PM.
 
+M-Pesa App payment (no date/time in message):
+  TLH8017IP1 Confirmed. 5,000.00 KSH paid to Cytonn Fund, 775093 for account number 108109011 via M-PESA App.
+
 Cytonn deposit confirmation:
   Your deposit of KES 5,000.00 in Cytonn Money Market Fund was successful.
   Transaction ID: CYTXYZ123. Date: 01-Aug-2025
@@ -37,6 +40,14 @@ _CYTONN_PATTERN = re.compile(
     r'.*?(?:Transaction\s+ID|Ref(?:erence)?(?:\s+No\.?)?)\s*[:\-]\s*([A-Z0-9]+)'
     r'.*?Date\s*[:\-]\s*(\d{1,2}[-/]\w{3}[-/]\d{2,4})',
     re.IGNORECASE | re.DOTALL,
+)
+
+# M-Pesa App: "TLH8017IP1 Confirmed. 5,000.00 KSH paid to Cytonn Fund, 775093 for account number ... via M-PESA App."
+# No date/time is present in this message format; we fall back to today at midnight.
+_MPESA_APP_PATTERN = re.compile(
+    r'^([A-Z0-9]{8,12})\s+Confirmed\.?\s*'
+    r'([\d,]+(?:\.\d{1,2})?)\s+KSH\s+paid\s+to\s+Cytonn',
+    re.IGNORECASE,
 )
 
 # Alternative Cytonn format where date comes before code
@@ -122,6 +133,21 @@ def parse_sms_text(sms: str) -> dict:
         code, raw_amount, date_str, time_str = m.groups()
         amount = _parse_amount(raw_amount)
         txn_dt = _parse_mpesa_date(date_str, time_str)
+        month_start = _prev_month(txn_dt)
+        return {
+            'code': code.upper(),
+            'amount': str(amount),
+            'transaction_date': txn_dt.isoformat(),
+            'contribution_month': month_start.isoformat(),
+            'source': 'mpesa',
+        }
+
+    # Try M-Pesa App format (no date in message – use today)
+    m = _MPESA_APP_PATTERN.search(sms)
+    if m:
+        code, raw_amount = m.groups()
+        amount = _parse_amount(raw_amount)
+        txn_dt = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         month_start = _prev_month(txn_dt)
         return {
             'code': code.upper(),
