@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    image: ghcr.io/ndolo7/bbc-chama:latest
     command: gunicorn bbc_chama.wsgi:application --bind 0.0.0.0:8000
     restart: always
     volumes:
