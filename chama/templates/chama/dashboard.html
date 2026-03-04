@@ -102,9 +102,15 @@
                             </small>
                             {% else %}
                             <div class="mt-1">
+                                {% if month_start < current_month_start %}
                                 <span class="badge badge-unpaid rounded-pill">
                                     <i class="bi bi-x-circle-fill me-1"></i>Pending
                                 </span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                    <i class="bi bi-calendar-event me-1"></i>Upcoming
+                                </span>
+                                {% endif %}
                             </div>
                             <small class="text-muted d-block mt-1">Shortfall: KES {{ s.shortfall|floatformat:0 }}</small>
                             {% endif %}
