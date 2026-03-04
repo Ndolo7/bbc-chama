@@ -72,8 +72,10 @@
                     <td>
                         {% if info.paid %}
                         <span class="badge badge-paid rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Paid</span>
-                        {% else %}
+                        {% elif info.month_start < current_month_start %}
                         <span class="badge badge-unpaid rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Pending</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill"><i class="bi bi-calendar-event me-1"></i>Upcoming</span>
                         {% endif %}
                     </td>
                     <td>{% if info.paid %}KES {{ info.amount|floatformat:0 }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
