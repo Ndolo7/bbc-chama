@@ -87,6 +87,7 @@
                     </td>
                     <td class="small text-muted">{{ c.created_at|date:"d M Y" }}</td>
                     <td>
+                        {% if request.user.is_staff %}
                         <form method="post" action="{% url 'chama:delete_contribution' c.pk %}"
                               onsubmit="return confirm('Delete this contribution?')">
                             {% csrf_token %}
@@ -94,6 +95,7 @@
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
