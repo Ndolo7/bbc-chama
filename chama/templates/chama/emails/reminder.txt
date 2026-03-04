@@ -4,13 +4,13 @@ BBC Chama – Contribution Reminder
 Hi {{ member.name }},
 
 {% if is_end_of_month %}The month of {{ month_name }} ends in {{ days_left }} day{{ days_left|pluralize }}.
-Your Cytonn MMF contribution for this month has NOT been received yet.
-{% else %}Your Cytonn MMF contribution for {{ month_name }} has not been received yet.
+Your Cytonn HYF contribution for this month has NOT been received yet.
+{% else %}Your Cytonn HYF contribution for {{ month_name }} has not been received yet.
 {% endif %}
 
 Amount due: KES {{ target|floatformat:0 }}
 
-Please send KES {{ target|floatformat:0 }} via M-Pesa to the Cytonn Money Market Fund
+Please send KES {{ target|floatformat:0 }} via M-Pesa to the Cytonn HYF
 and share the confirmation SMS in the group chat so it can be recorded.
 
 ---
