@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Sum, Count
@@ -32,6 +33,7 @@ def _month_range_from_start():
 @login_required
 def dashboard(request):
     today = date.today()
+    current_month_start = date(today.year, today.month, 1)
     year = int(request.GET.get('year', today.year))
     month = int(request.GET.get('month', today.month))
     month_start = date(year, month, 1)
@@ -87,6 +89,7 @@ def dashboard(request):
         'has_next': has_next,
         'next_year': next_month[0],
         'next_month': next_month[1],
+        'current_month_start': current_month_start,
     })
 
 
@@ -200,6 +203,9 @@ def member_detail(request, pk):
         MonthlyTarget.for_month(y, m) for y, m in all_months
     ))
 
+    today = date.today()
+    current_month_start = date(today.year, today.month, 1)
+
     return render(request, 'chama/member_detail.html', {
         'member': member,
         'contribs_by_month': contribs_by_month,
@@ -209,6 +215,7 @@ def member_detail(request, pk):
         'total_contributed': total_contributed,
         'total_expected': total_expected,
         'deficit': max(0, total_expected - total_contributed),
+        'current_month_start': current_month_start,
     })
 
 
@@ -292,6 +299,8 @@ def reports(request):
 
 @login_required
 def delete_contribution(request, pk):
+    if not request.user.is_staff:
+        raise PermissionDenied
     contribution = get_object_or_404(Contribution, pk=pk)
     if request.method == 'POST':
         name = str(contribution)
@@ -299,3 +308,67 @@ def delete_contribution(request, pk):
         messages.success(request, f'Deleted contribution: {name}')
         return redirect('chama:contributions')
     return render(request, 'chama/confirm_delete.html', {'contribution': contribution})
+
+
+@login_required
+def reports_all(request):
+    """Combined report across all years."""
+    today = date.today()
+    current_month_start = date(today.year, today.month, 1)
+    all_months = _month_range_from_start()
+    members = Member.objects.filter(is_active=True)
+
+    # Per-year summary
+    available_years = sorted(set(y for y, _ in all_months), reverse=True)
+    year_summaries = []
+    for y in available_years:
+        year_months = [(yy, mm) for yy, mm in all_months if yy == y]
+        total = float(Contribution.objects.filter(
+            contribution_month__year=y
+        ).aggregate(s=Sum('amount'))['s'] or 0)
+        expected_months = [
+            (yy, mm) for yy, mm in year_months
+            if date(yy, mm, 1) < current_month_start
+        ]
+        expected = float(sum(
+            MonthlyTarget.for_month(yy, mm) for yy, mm in expected_months
+        )) * members.count()
+        year_summaries.append({
+            'year': y,
+            'total': total,
+            'expected': expected,
+            'deficit': max(0, expected - total),
+            'months': len(year_months),
+        })
+
+    # Per-member all-time summary
+    member_summaries = []
+    ended_months = [
+        (y, m) for y, m in all_months
+        if date(y, m, 1) < current_month_start
+    ]
+    for member in members:
+        total = float(member.total_contributed())
+        expected = float(sum(
+            MonthlyTarget.for_month(y, m) for y, m in ended_months
+        ))
+        member_summaries.append({
+            'member': member,
+            'total': total,
+            'expected': expected,
+            'deficit': max(0, expected - total),
+            'months_paid': member.contributions.count(),
+            'months_total': len(ended_months),
+        })
+
+    grand_total = sum(ms['total'] for ms in member_summaries)
+    grand_expected = sum(ms['expected'] for ms in member_summaries)
+
+    return render(request, 'chama/reports_all.html', {
+        'year_summaries': year_summaries,
+        'member_summaries': member_summaries,
+        'grand_total': grand_total,
+        'grand_expected': grand_expected,
+        'grand_deficit': max(0, grand_expected - grand_total),
+        'ended_months_count': len(ended_months),
+    })

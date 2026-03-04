@@ -1,0 +1,135 @@
+{% extends "chama/base.html" %}
+
+{% block title %}All Years Report – BBC Chama{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">All Years Report</h4>
+        <p class="text-muted small mb-0">Combined contribution summary across all periods ({{ ended_months_count }} ended months)</p>
+    </div>
+    <a href="{% url 'chama:reports' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-calendar3 me-1"></i>Annual View
+    </a>
+</div>
+
+<!-- Grand KPI cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100 border-success border-2">
+            <div class="stat-label text-muted">Total Collected (All Time)</div>
+            <div class="stat-value text-success">KES {{ grand_total|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted">Total Expected (Ended Months)</div>
+            <div class="stat-value">KES {{ grand_expected|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card p-3 h-100 border-danger border-2">
+            <div class="stat-label text-muted">Grand Deficit</div>
+            <div class="stat-value {% if grand_deficit > 0 %}text-danger{% else %}text-success{% endif %}">
+                KES {{ grand_deficit|floatformat:0 }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Per-member all-time summary -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Member All-Time Summary</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Member</th>
+                    <th>Months Paid</th>
+                    <th>Total Contributed</th>
+                    <th>Expected</th>
+                    <th>Deficit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ms in member_summaries %}
+                <tr>
+                    <td>
+                        <a href="{% url 'chama:member_detail' ms.member.pk %}" class="text-decoration-none fw-medium">
+                            {{ ms.member.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge {% if ms.months_paid == ms.months_total %}bg-success{% elif ms.months_paid > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %} rounded-pill">
+                            {{ ms.months_paid }} / {{ ms.months_total }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold text-success">KES {{ ms.total|floatformat:0 }}</td>
+                    <td>KES {{ ms.expected|floatformat:0 }}</td>
+                    <td>
+                        {% if ms.deficit > 0 %}
+                        <span class="text-danger fw-medium">KES {{ ms.deficit|floatformat:0 }}</span>
+                        {% else %}
+                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Fully paid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>No data available.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Year-by-year breakdown -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Year-by-Year Breakdown</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Year</th>
+                    <th>Months</th>
+                    <th>Total Collected</th>
+                    <th>Expected</th>
+                    <th>Deficit</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ys in year_summaries %}
+                <tr>
+                    <td class="fw-semibold">{{ ys.year }}</td>
+                    <td class="text-muted">{{ ys.months }}</td>
+                    <td class="fw-semibold text-success">KES {{ ys.total|floatformat:0 }}</td>
+                    <td>KES {{ ys.expected|floatformat:0 }}</td>
+                    <td>
+                        {% if ys.deficit > 0 %}
+                        <span class="text-danger fw-medium">KES {{ ys.deficit|floatformat:0 }}</span>
+                        {% elif ys.expected > 0 %}
+                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> On track</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'chama:reports' %}?year={{ ys.year }}" class="btn btn-sm btn-outline-primary border-0">
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
