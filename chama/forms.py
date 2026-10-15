@@ -11,9 +11,9 @@ class SMSPasteForm(forms.Form):
             'placeholder': (
                 'Paste the M-Pesa or Cytonn SMS here...\n\n'
                 'Example (M-Pesa):\n'
-                'QGH3K2P1R5 Confirmed. Ksh5,000.00 sent to CYTONN MONEY MARKET FUND on 31/8/25 at 10:30 AM.\n\n'
+                'QGH3K2P1R5 Confirmed. Ksh5,000.00 sent to CYTONN HIGH YIELD FUND on 31/8/25 at 10:30 AM.\n\n'
                 'Example (Cytonn):\n'
-                'Your deposit of KES 5,000.00 in Cytonn Money Market Fund was successful. '
+                'Your deposit of KES 5,000.00 in Cytonn High Yield Fund was successful. '
                 'Transaction ID: CYT123456. Date: 31-Aug-2025'
             ),
         }),
