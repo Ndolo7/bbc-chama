@@ -20,7 +20,7 @@
 <div class="card">
   <div class="header">
     <h1>&#128026; BBC Chama</h1>
-    <p>Cytonn Money Market Fund</p>
+    <p>Cytonn High Yield Fund</p>
   </div>
   <div class="body">
     <p>Hi <strong>{{ member.name }}</strong>,</p>
@@ -38,8 +38,10 @@
       <div class="value">KES {{ target|floatformat:0 }}</div>
     </div>
 
-    <p>Please send <strong>KES {{ target|floatformat:0 }}</strong> via M-Pesa to the Cytonn Money Market Fund
+    <p>Please send <strong>KES {{ target|floatformat:0 }}</strong> via M-Pesa to the Cytonn High Yield Fund
     and share the confirmation SMS in the group chat.</p>
+
+    <p><a class="btn" href="{{ app_url }}">Open BBC Chama</a></p>
 
     <p style="color:#64748b; font-size:13px;">
       Once shared, the admin will record it on the BBC Chama tracker.
@@ -48,6 +50,7 @@
   <div class="footer">
     BBC Chama &mdash; automated reminder &middot; {{ today|date:"d M Y" }}
     <br>You are receiving this because your contribution for {{ month_name }} is outstanding.
+    <br><a href="{{ app_url }}" style="color:#1a2744;">Open the live BBC Chama app</a>
   </div>
 </div>
 </body>

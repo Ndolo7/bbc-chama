@@ -18,3 +18,5 @@ Member Breakdown
 
 ---
 BBC Chama | {{ today|date:"d M Y" }} | Target: KES {{ target|floatformat:0 }}/member
+
+Open the live BBC Chama app: {{ app_url }}

@@ -50,6 +50,7 @@ def send_monthly_reminders():
                 'month_name': month_name,
                 'target': target,
                 'today': today,
+                'app_url': settings.APP_URL,
             }
             html_body = render_to_string('chama/emails/reminder.html', context)
             text_body = render_to_string('chama/emails/reminder.txt', context)
@@ -111,6 +112,7 @@ def send_monthly_report():
         'deficit': max(0, total_expected - total_collected),
         'target': target,
         'today': today,
+        'app_url': settings.APP_URL,
     }
     html_body = render_to_string('chama/emails/monthly_report.html', context)
     text_body = render_to_string('chama/emails/monthly_report.txt', context)
@@ -156,6 +158,7 @@ def send_end_of_month_reminder():
                 'days_left': days_left,
                 'today': today,
                 'is_end_of_month': True,
+                'app_url': settings.APP_URL,
             }
             html_body = render_to_string('chama/emails/reminder.html', context)
             text_body = render_to_string('chama/emails/reminder.txt', context)

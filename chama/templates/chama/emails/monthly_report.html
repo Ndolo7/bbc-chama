@@ -78,10 +78,13 @@
       &#10003; All members have contributed for {{ month_name }}. Great work, team!
     </p>
     {% endif %}
+
+    <p style="text-align:center; margin:24px 0 8px;"><a href="{{ app_url }}" style="display:inline-block;background:#1a2744;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;">Open BBC Chama</a></p>
   </div>
   <div class="footer">
     BBC Chama &mdash; monthly report &middot; {{ today|date:"d M Y" }}<br>
     Target per member: KES {{ target|floatformat:0 }}
+    <br><a href="{{ app_url }}" style="color:#1a2744;">Open the live BBC Chama app</a>
   </div>
 </div>
 </body>
