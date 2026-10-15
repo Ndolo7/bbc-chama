@@ -74,6 +74,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 # ── Email (Brevo API via anymail) ───────────────────────────────────────────
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='BBC Chama <noreply@example.com>')
+APP_URL = config('APP_URL', default='https://chama.ndolo.dev')
 ANYMAIL = {
     'BREVO_API_KEY': config('BREVO_API_KEY', default=''),
 }

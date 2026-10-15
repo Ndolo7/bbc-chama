@@ -16,3 +16,5 @@ and share the confirmation SMS in the group chat so it can be recorded.
 ---
 BBC Chama | {{ today|date:"d M Y" }}
 Automated reminder – your {{ month_name }} contribution is outstanding.
+
+Open the live BBC Chama app: {{ app_url }}
