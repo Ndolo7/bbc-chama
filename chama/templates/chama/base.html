@@ -39,6 +39,17 @@
     </div>
 </nav>
 
+{% if is_demo %}
+<div class="alert alert-warning rounded-0 border-0 border-bottom mb-0 py-2 px-3 small d-flex flex-wrap align-items-center gap-2">
+    <i class="bi bi-eye"></i>
+    <span><strong>Demo mode.</strong> All members and figures are fictional, and the data resets every {{ demo_reset_hours }} hours.</span>
+    <form method="post" action="{% url 'logout' %}" class="m-0 ms-auto">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-link p-0 text-warning-emphasis">Exit demo</button>
+    </form>
+</div>
+{% endif %}
+
 <!-- Mobile offcanvas sidebar -->
 {% if user.is_authenticated %}
 <div class="offcanvas offcanvas-start text-white" style="background-color:#1a2744; width:240px;"
@@ -97,11 +108,11 @@
                 <small class="text-white-50 text-uppercase d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Cytonn – HYF Account</small>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <i class="bi bi-phone text-success"></i>
-                    <small class="text-white">Paybill: <strong>788367</strong></small>
+                    <small class="text-white">Paybill: <strong>{% if is_demo %}000000{% else %}788367{% endif %}</strong></small>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-hash text-success"></i>
-                    <small class="text-white">Account: <strong>80224053</strong></small>
+                    <small class="text-white">Account: <strong>{% if is_demo %}DEMO-0001{% else %}80224053{% endif %}</strong></small>
                 </div>
             </li>
         </ul>
@@ -161,11 +172,11 @@
                     <small class="text-white-50 text-uppercase d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Cytonn – HYF Account</small>
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <i class="bi bi-phone text-success"></i>
-                        <small class="text-white">Paybill: <strong>788367</strong></small>
+                        <small class="text-white">Paybill: <strong>{% if is_demo %}000000{% else %}788367{% endif %}</strong></small>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-hash text-success"></i>
-                        <small class="text-white">Account: <strong>80224053</strong></small>
+                        <small class="text-white">Account: <strong>{% if is_demo %}DEMO-0001{% else %}80224053{% endif %}</strong></small>
                     </div>
                 </li>
             </ul>
