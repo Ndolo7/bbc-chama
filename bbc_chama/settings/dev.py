@@ -8,7 +8,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
+    'demo': DEMO_DATABASE,  # noqa: F405
 }
 
 # Print emails to console in development instead of calling Brevo
