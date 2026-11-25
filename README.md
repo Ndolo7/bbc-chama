@@ -152,6 +152,20 @@ The default compose stack starts:
 
 Open: `http://127.0.0.1:8001/`
 
+## Guest Demo
+
+The login page has a **Try the demo** button. It signs the visitor in as a shared, password-less `demo` user
+(non-staff, so no admin access). All of that user's chama data is routed to a separate SQLite database filled
+with fictional members and contributions (see `chama/demo.py`). Real data is never read or written in demo mode.
+
+- Demo data covers every month from `CHAMA_START_MONTH` up to today. It is reseeded automatically when it is
+  older than `DEMO_RESET_HOURS` or a new month starts.
+- On *Add Contribution*, demo users get a **Use sample SMS** button to try the parse → save flow.
+- Reset manually with `python manage.py seed_demo`.
+- Settings (env): `DEMO_ENABLED` (default `True`), `DEMO_RESET_HOURS` (default `24`),
+  `DEMO_DB_PATH` (default `<project>/demo.sqlite3`), `DEMO_USERNAME` (default `demo`).
+  Don't give a real account the demo username: it would be routed to demo data.
+
 ## Production Notes
 
 - Use `DJANGO_ENV=prod`.
