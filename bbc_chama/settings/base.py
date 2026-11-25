@@ -25,6 +25,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'chama.demo.DemoDatabaseMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -43,6 +44,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'chama.context_processors.sidebar_members',
+                'chama.context_processors.demo',
             ],
         },
     },
@@ -88,3 +90,17 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # ── Chama config ────────────────────────────────────────────────────────────
 CHAMA_MONTHLY_TARGET = 5000
 CHAMA_START_MONTH = '2025-08-01'
+
+# ── Guest demo ──────────────────────────────────────────────────────────────
+# Guests can sign in as a shared demo user whose chama data lives in a
+# separate SQLite database (see chama/demo.py). Real data is never exposed.
+DEMO_ENABLED = config('DEMO_ENABLED', default=True, cast=bool)
+DEMO_USERNAME = config('DEMO_USERNAME', default='demo')
+DEMO_RESET_HOURS = config('DEMO_RESET_HOURS', default=24, cast=int)
+DEMO_DB_ALIAS = 'demo'
+DEMO_DATABASE = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': config('DEMO_DB_PATH', default=str(BASE_DIR / 'demo.sqlite3')),
+    'OPTIONS': {'timeout': 20},
+}
+DATABASE_ROUTERS = ['chama.demo.DemoRouter']
