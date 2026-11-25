@@ -1,8 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.conf import settings
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
+from django.views.decorators.http import require_POST
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import date, timedelta
@@ -12,6 +15,7 @@ import json
 from .models import Member, Contribution, MonthlyTarget
 from .forms import SMSPasteForm, ContributionConfirmForm
 from .parsers import parse_sms_text, ParseError
+from .demo import ensure_demo_data, is_demo_user, sample_sms
 
 
 def _month_range_from_start():
@@ -28,6 +32,35 @@ def _month_range_from_start():
             m = 1
             y += 1
     return months
+
+
+@require_POST
+def demo_login(request):
+    """Sign a guest in as the shared demo user, backed by the demo database."""
+    if not settings.DEMO_ENABLED:
+        raise Http404
+    user, _ = get_user_model().objects.get_or_create(
+        username=settings.DEMO_USERNAME,
+        defaults={'first_name': 'Demo', 'last_name': 'Guest'},
+    )
+    # The demo account must never be usable via the password form or admin.
+    # Only touch the password when needed: changing it would invalidate the
+    # sessions of other guests currently using the demo.
+    if user.has_usable_password() or user.is_staff or user.is_superuser or not user.is_active:
+        if user.has_usable_password():
+            user.set_unusable_password()
+        user.is_staff = user.is_superuser = False
+        user.is_active = True
+        user.save()
+
+    ensure_demo_data()
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    messages.info(
+        request,
+        'Welcome to the BBC Chama demo! Everything here is fictional – '
+        'feel free to add contributions and explore the reports.',
+    )
+    return redirect('chama:dashboard')
 
 
 @login_required
@@ -114,6 +147,7 @@ def add_contribution(request):
     return render(request, 'chama/add_contribution.html', {
         'sms_form': sms_form,
         'form': form,
+        'demo_sample_sms': sample_sms() if is_demo_user(request.user) else None,
     })
 
 

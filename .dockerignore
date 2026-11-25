@@ -9,6 +9,7 @@ __pycache__/
 .env
 .env.prod
 db.sqlite3
+demo.sqlite3
 staticfiles/
 *.log
 .claude/

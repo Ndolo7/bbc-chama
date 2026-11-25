@@ -28,6 +28,13 @@ Your deposit of KES 5,000.00 in Cytonn High Yield Fund was successful. Transacti
                 <button type="button" id="parse-btn" class="btn btn-secondary">
                     <i class="bi bi-magic me-2"></i>Parse SMS
                 </button>
+                {% if demo_sample_sms %}
+                <button type="button" id="sample-sms-btn" class="btn btn-outline-secondary ms-2"
+                        data-sms="{{ demo_sample_sms }}">
+                    <i class="bi bi-chat-text me-2"></i>Use sample SMS
+                </button>
+                <div class="form-text">Demo: no real SMS? Use a generated one. It counts towards last month.</div>
+                {% endif %}
 
                 <div id="parse-result" class="mt-3 p-3 d-none">
                     <!-- filled by JS -->
@@ -129,6 +136,14 @@ Your deposit of KES 5,000.00 in Cytonn High Yield Fund was successful. Transacti
 <script>
 const PARSE_URL = "{% url 'chama:parse_sms' %}";
 const CSRF = "{{ csrf_token }}";
+
+const sampleBtn = document.getElementById('sample-sms-btn');
+if (sampleBtn) {
+    sampleBtn.addEventListener('click', () => {
+        document.getElementById('sms-input').value = sampleBtn.dataset.sms;
+        document.getElementById('parse-btn').click();
+    });
+}
 
 document.getElementById('parse-btn').addEventListener('click', async () => {
     const sms = document.getElementById('sms-input').value.trim();

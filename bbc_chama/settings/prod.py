@@ -12,7 +12,8 @@ CSRF_TRUSTED_ORIGINS = [
 
 # ── Database (PostgreSQL) ────────────────────────────────────────────────────
 DATABASES = {
-    'default': dj_database_url.parse(config('DATABASE_URL'))
+    'default': dj_database_url.parse(config('DATABASE_URL')),
+    'demo': DEMO_DATABASE,  # noqa: F405
 }
 
 # ── Email (Brevo API) ────────────────────────────────────────────────────────
